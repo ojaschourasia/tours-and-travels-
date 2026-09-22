@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Help Kit and Location Finder for Manipur Tourist Places</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>🧭 Help Kit &amp; Location Finder for Manipur Tourist Places</h1>
+  <p>Free trip companion — nearby essentials, live distances &amp; a trip planner built around your own days</p>
+  <div class="tabs">
+    <div class="tab active" id="tabExploreBtn">📍 Explore Nearby</div>
+    <div class="tab" id="tabPlanBtn">🗺️ Trip Planner</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<!-- ===================== EXPLORE TAB ===================== -->
+<div id="tabExplore">
+
+  <div class="panel">
+    <div class="loc-row">
+      <button class="btn btn-primary" id="locBtn">📍 Use my location</button>
+      <button class="btn btn-ghost" id="customLocBtn">🖊️ Enter location manually</button>
+      <span id="locStatus">Turn location on to see how far each place is from you.</span>
+    </div>
+
+    <div class="custom-loc" id="customLocPanel">
+      <div class="coord-row">
+        <input type="number" step="any" id="latInput" placeholder="Latitude e.g. 24.8075">
+        <input type="number" step="any" id="lngInput" placeholder="Longitude e.g. 93.9428">
+        <button class="btn btn-primary" id="applyCoordBtn">Set</button>
+      </div>
+      <div class="coord-help">
+        Don't know the coordinates? Open
+        <a href="https://www.google.com/maps" target="_blank" rel="noopener">Google Maps</a>,
+        press and hold (or right-click) on any spot to drop a pin — the lat, lng numbers pop up at the bottom.
+        Copy them here and tap Set. This replaces "Use my location" with any place you choose.
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="🔍 Search any hotel, cafe, hospital or restaurant by name…">
+    </div>
+
+    <div class="spots" id="spotRow"></div>
+    <div class="spot-desc" id="spotDesc"></div>
+    <div class="evening-note" id="eveningNote">🌆 It's getting late in the day — showing hotels first so you can lock in tonight's stay.</div>
+    <div class="cats" id="catRow"></div>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="list" id="list"></div>
+
+  <div class="note" id="washroomNote" style="display:none">
+    🚻 Verified public-washroom listings are rare on the map data source, so results here are limited.
+    Tap "Search live on Google Maps" below to find the closest public toilet to your current pin in real time.
+    <div style="margin-top:8px"><a class="btn btn-ghost" id="washroomSearchLink" target="_blank" rel="noopener" style="text-decoration:none; display:inline-block;">🔍 Search live on Google Maps</a></div>
+  </div>
+
+  <div class="note">
+    ℹ️ Free, open guide — no account needed. "Use my location" only asks your browser's built‑in location
+    permission (the same one Google Maps uses). Prefer not to share it? Use "Enter location manually" and paste
+    coordinates from Google Maps instead. Nothing is stored or shared either way.
+  </div>
+</div>
+
+<!-- ===================== TRIP PLANNER TAB ===================== -->
+<div id="tabPlan" style="display:none;">
+  <div class="panel" id="customizePanel">
+    <b style="font-family:'Poppins',sans-serif;">🛠️ Build your own Manipur trip</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 10px; line-height:1.5;">
+      Choose how many days you actually have and which places you want to see — the route below
+      reorders itself by distance and rebuilds instantly. Leave it as-is to see a ready-made example plan instead.
+    </p>
+    <div class="coord-row" style="margin-top:0;">
+      <input type="number" id="dayCountInput" min="1" max="10" value="5" style="max-width:90px;">
+      <span style="font-size:0.85rem; color:var(--muted); align-self:center;">day(s) trip</span>
+    </div>
+    <div class="spot-check-grid" id="spotCheckGrid"></div>
+    <div class="coord-row">
+      <button class="btn btn-primary" id="generatePlanBtn" style="flex:1;">✨ Generate my plan</button>
+      <button class="btn btn-ghost" id="resetPlanBtn" style="flex:1;">↺ Reset to example plan</button>
+    </div>
+  </div>
+
+  <div id="planList"></div>
+  <div class="note">
+    🌙 Sunset in Manipur is roughly 5:00–5:45 PM most of the year. Plan to be at your last stop of the day
+    by 4:30 PM latest, and lock in a room before dusk — many rural roads (Loktak, Andro, Sekta) are unlit at night.
+  </div>
+</div>
+
+<footer>Made for travellers exploring Manipur • Data via Google Places</footer>
+</div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
