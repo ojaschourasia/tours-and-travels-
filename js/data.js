@@ -15,6 +15,7 @@ const TOURIST_SPOTS = [
 const CATEGORIES = [
   { id:'hotel', label:'Hotels', icon:'🛏️' },
   { id:'hospital', label:'Hospitals', icon:'🏥' },
+  { id:'police', label:'Police', icon:'🚓' },
   { id:'cafe', label:'Cafés', icon:'☕' },
   { id:'restaurant', label:'Restaurants', icon:'🍽️' },
   { id:'washroom', label:'Washrooms', icon:'🚻' },
@@ -36,12 +37,21 @@ const PLACES = [
   {n:"Sendra Park & Resort",c:"hotel",lat:24.5152516,lng:93.7951698,a:"Sendra, Thanga, Loktak Lake",r:4.3,rc:1201,ph:"+91 81319 80420",pl:2,pid:"ChIJpSSH_K81STcRPxY0Hjan3fk",tag:"Popular · lake view"},
   {n:"Shalom Farmhouse",c:"hotel",lat:24.8429835,lng:93.9316440,a:"Raphei Colony, Mantripukhri (near Khonghampat)",r:4.3,rc:177,ph:"+91 60097 61638",pl:2,pid:"ChIJz_N2k0AnSTcRnVWHyNTTUyM",tag:"Peaceful, pool"},
 
-  {n:"Shija Hospitals and Research Institute",c:"hospital",lat:24.8353973,lng:93.9139669,a:"Langol Housing Complex, Imphal",r:4.1,rc:1053,ph:"+91 70850 12345",pl:null,pid:"ChIJi3Hl0-UnSTcRJu0ajAYnZLw",tag:"Multi‑specialty · 24hr"},
-  {n:"Regional Institute of Medical Sciences (RIMS)",c:"hospital",lat:24.8158998,lng:93.9228051,a:"Lamphel Rd, Imphal",r:3.8,rc:366,ph:"+91 385 241 4629",pl:null,pid:"ChIJGZkxw8gnSTcR1-2hl8zpAGk",tag:"Govt. hospital · 24hr"},
+  {n:"Shija Hospitals and Research Institute",c:"hospital",lat:24.8353973,lng:93.9139669,a:"Langol Housing Complex, Imphal",r:4.1,rc:1053,ph:"+91 70850 12345",pl:null,pid:"ChIJi3Hl0-UnSTcRJu0ajAYnZLw",tag:"Multi‑specialty · 24hr",web:"https://www.shijahospitals.com/"},
+  {n:"Regional Institute of Medical Sciences (RIMS)",c:"hospital",lat:24.8158998,lng:93.9228051,a:"Lamphel Rd, Imphal",r:3.8,rc:366,ph:"+91 385 241 4629",pl:null,pid:"ChIJGZkxw8gnSTcR1-2hl8zpAGk",tag:"Govt. hospital · 24hr",web:"https://www.rims.edu.in/"},
   {n:"Sky Hospital & Research Centre",c:"hospital",lat:24.8130175,lng:93.9280891,a:"RIMS Rd, Uripok, Imphal",r:4.1,rc:332,ph:"+91 84159 38207",pl:null,pid:"ChIJ91E1R7YnSTcRPPw_9T5oZxQ",tag:"Cardiology · 24hr"},
   {n:"Hillside Charitable Hospital",c:"hospital",lat:24.8270875,lng:93.9333281,a:"Thangmeiband, Imphal",r:3.9,rc:85,ph:"+91 70054 46875",pl:null,pid:"ChIJV_JTub0nSTcRqZnC4AYdyDg",tag:"Affordable · charitable"},
   {n:"Asian Hospital and Research Institute",c:"hospital",lat:24.7879204,lng:93.9223049,a:"Kwakeithel Rd, Imphal",r:3.2,rc:120,ph:null,pl:null,pid:"ChIJS1jITTkmSTcRoq8skqvPqXQ",tag:"24hr"},
   {n:"Catholic Medical Centre (CMC)",c:"hospital",lat:24.8835829,lng:93.9209115,a:"Koirengei, Imphal East",r:3.8,rc:84,ph:"+91 385 242 7372",pl:null,pid:"ChIJL2pK_jvYSDcRLXPWiuDRSG4",tag:"24hr"},
+
+  {n:"City Police Station",c:"police",lat:24.8104523,lng:93.9369592,a:"M.G. Avenue, Gandhi Ave, Thangal Bazar, Imphal",r:null,rc:null,ph:null,pl:null,pid:"ChIJ3badB7InSTcRwvBcaw-MBt8",tag:"Central Imphal · 24hr",web:"https://manipurpolice.gov.in/"},
+  {n:"Lamphel Police Station",c:"police",lat:24.8198974,lng:93.9249237,a:"Lamphelpat, Imphal",r:null,rc:null,ph:"+91 385 241 4616",pl:null,pid:"ChIJNeeCpscnSTcRk-n426X4Vcs",tag:"24hr",web:"https://manipurpolice.gov.in/"},
+  {n:"Kwakeithel Police Station",c:"police",lat:24.786845,lng:93.9211391,a:"Lourembam Leikai, Imphal",r:null,rc:null,ph:null,pl:null,pid:"ChIJTR1XGjwmSTcR4e6AsSm3Gis",tag:"24hr",web:"https://manipurpolice.gov.in/"},
+  {n:"Women Police Station",c:"police",lat:24.8063948,lng:93.9592496,a:"Porompat DC Rd, Thawanthaba Leirak, Imphal",r:null,rc:null,ph:null,pl:null,pid:"ChIJScTUO6InSTcRwpXKkrBFLYI",tag:"Women's helpdesk",web:"https://manipurpolice.gov.in/"},
+  {n:"Irilbung Police Station",c:"police",lat:24.7701789,lng:93.9649043,a:"Lrilbung Brg Rd, Kshetrigao, Imphal East",r:null,rc:null,ph:null,pl:null,pid:"ChIJSXgR7gIkSTcRZwqxpd1WJSk",tag:"24hr",web:"https://manipurpolice.gov.in/"},
+  {n:"Moirang Police Station",c:"police",lat:24.4988625,lng:93.7646094,a:"Tiddim Road, Pasang Leikai, Moirang",r:null,rc:null,ph:null,pl:null,pid:"ChIJoWJbjmo1STcRBr1BTGapIOQ",tag:"Near Loktak/INA",web:"https://manipurpolice.gov.in/"},
+  {n:"Loktak Police Station",c:"police",lat:24.5793339,lng:93.7430291,a:"Zero Colony, Ningthoukhong, Loktak",r:null,rc:null,ph:null,pl:null,pid:"ChIJjSDjrqzMTjcRRT9T1RT8VLE",tag:"Near Loktak Lake",web:"https://manipurpolice.gov.in/"},
+  {n:"Andro Police Station",c:"police",lat:24.7011158,lng:94.0236998,a:"Angtha–Yairipok Road, Angtha, near Andro",r:null,rc:null,ph:null,pl:null,pid:"ChIJk_Bc9gMjSTcRMK_TNu97PF4",tag:"Near Andro village",web:"https://manipurpolice.gov.in/"},
 
   {n:"ROOTED Coffee & Eatery",c:"cafe",lat:24.8256597,lng:93.9442195,a:"Dewlahland, Imphal",r:4.5,rc:59,ph:"+91 93667 63459",pl:2,pid:"ChIJ90MIlBcnSTcR5S2aSt59Mmo",tag:"Best coffee"},
   {n:"TIMBER CAFE IMPHAL",c:"cafe",lat:24.8237013,lng:93.9441334,a:"Chingmeirong, Imphal",r:4.0,rc:431,ph:"+91 96251 05197",pl:2,pid:"ChIJ-R8MHKEnSTcRMxKcU2PfDt8",tag:"Great ambience"},

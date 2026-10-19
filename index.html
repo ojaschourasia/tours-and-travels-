@@ -14,6 +14,7 @@
   <div class="tabs">
     <div class="tab active" id="tabExploreBtn">📍 Explore Nearby</div>
     <div class="tab" id="tabPlanBtn">🗺️ Trip Planner</div>
+    <div class="tab" id="tabReviewsBtn">⚠️ Reviews &amp; Safety</div>
   </div>
 </header>
 
@@ -93,6 +94,84 @@
   <div class="note">
     🌙 Sunset in Manipur is roughly 5:00–5:45 PM most of the year. Plan to be at your last stop of the day
     by 4:30 PM latest, and lock in a room before dusk — many rural roads (Loktak, Andro, Sekta) are unlit at night.
+  </div>
+</div>
+
+<!-- ===================== REVIEWS & SAFETY TAB ===================== -->
+<div id="tabReviews" style="display:none;">
+
+  <div class="panel">
+    <b style="font-family:'Poppins',sans-serif;">⚠️ Reviews &amp; Safety Reports</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 10px; line-height:1.5;">
+      Read or leave a review for any tourist spot, hotel, cafe, restaurant, hospital or police station —
+      including flagging a safety concern (crisis, conflict, an accidental fight, or anything that felt unsafe)
+      so other travellers see it before they go.
+    </p>
+    <select id="reviewLocationSelect"></select>
+  </div>
+
+  <div class="panel" id="reviewSummaryPanel" style="display:none;"></div>
+
+  <!-- ---- Compulsory sign-in gate: must pass before posting a review or feedback ---- -->
+  <div class="panel" id="signInGatePanel">
+    <b style="font-size:0.9rem;">🔐 Sign in to Help Kit Manipur</b>
+    <p style="font-size:0.78rem; color:var(--muted); margin:6px 0 10px; line-height:1.4;">
+      Reading reviews below is always open to everyone. To post a rating or review — just like on the Play
+      Store — sign in first, so your name shows next to your comment instead of it being anonymous.
+    </p>
+    <div class="signin-options">
+      <button class="btn btn-primary" id="signInGoogleBtn" style="width:100%; margin-bottom:8px;">🔵 Continue with Google</button>
+      <button class="btn btn-ghost" id="signInMobileBtn" style="width:100%;">📱 Continue with Mobile Number</button>
+    </div>
+
+    <div id="googleSignInForm" style="display:none; margin-top:10px;">
+      <input type="text" id="googleNameInput" placeholder="Your name" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <input type="email" id="googleEmailInput" placeholder="Google email" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <button class="btn btn-primary" id="googleContinueBtn" style="width:100%;">Continue</button>
+      <div id="googleGateMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+    </div>
+
+    <div id="mobileSignInForm" style="display:none; margin-top:10px;">
+      <input type="text" id="gateNameInput" placeholder="Your name" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <input type="tel" id="gateMobileInput" placeholder="Mobile number (10 digits)" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <button class="btn btn-primary" id="mobileContinueBtn" style="width:100%;">Continue</button>
+      <div id="mobileGateMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+    </div>
+
+    <p style="font-size:0.72rem; color:var(--muted); margin-top:10px;">
+      For your privacy, we don't verify your email or number — it's only used to put your name on your review.
+      It's never stored or shown to anyone.
+    </p>
+  </div>
+
+  <div class="panel" id="signedInBadge" style="display:none;">
+    ✅ Posting as <b id="signedInName"></b> · <button class="a-copy" id="gateSignOutBtn">Switch / sign out</button>
+  </div>
+
+  <div class="panel" id="reviewFormPanel" style="display:none;">
+    <b style="font-size:0.9rem;">✍️ Add your review</b>
+    <div class="star-picker" id="starPicker">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <textarea id="reviewText" rows="3" placeholder="Share your experience — crowd levels, cleanliness, how safe it felt, anything useful for other travellers…"></textarea>
+    <label class="safety-check">
+      <input type="checkbox" id="safetyCheck"> ⚠️ This report describes a safety concern (crisis, conflict, accidental fight, or similar incident)
+    </label>
+    <button class="btn btn-primary" id="submitReviewBtn" style="margin-top:10px; width:100%;">Post review</button>
+    <div id="reviewMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+  </div>
+
+  <div class="list" id="reviewsList"></div>
+
+  <div class="panel" id="feedbackFormPanel" style="display:none;">
+    <b style="font-size:0.9rem;">💬 General feedback about this website</b>
+    <textarea id="siteFeedbackText" rows="3" placeholder="Bugs, ideas, missing places, anything — let us know…" style="margin-top:8px;"></textarea>
+    <button class="btn btn-ghost" id="submitSiteFeedbackBtn" style="margin-top:8px; width:100%;">Send feedback</button>
+    <div id="siteFeedbackMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+  </div>
+
+  <div class="note" id="reviewsStorageNote">
+    🔄 Checking whether shared reviews are available…
   </div>
 </div>
 

@@ -16,6 +16,12 @@ function mapsViewUrl(p){
 function mapsDirUrl(p){
   return 'https://www.google.com/maps/dir/?api=1&destination='+p.lat+','+p.lng+(p.pid?('&destination_place_id='+p.pid):'')+'&travelmode=driving';
 }
+function officialWebsiteUrl(p){
+  // Use a confirmed official site where we have one; otherwise fall back to a search for it
+  // rather than guessing a URL — most small local places (homestays, cafés) genuinely have none.
+  if(p.web) return p.web;
+  return 'https://www.google.com/search?q='+encodeURIComponent(p.n+' '+p.a+' official website');
+}
 function priceRangeFor(pl){
   const bands = {
     0: {tier:'Budget',      nonAC:[600,1000],  ac:[900,1500]},
@@ -27,6 +33,35 @@ function priceRangeFor(pl){
   return bands[pl] || bands[0];
 }
 function fmtRupee(range){ return '₹'+range[0].toLocaleString('en-IN')+'–'+range[1].toLocaleString('en-IN'); }
+
+/* ---- Jugnoo (North-East's Ola/Rapido-style auto app) helpers ---- */
+/**
+ * A plain https:// link to Jugnoo, built exactly the same way the Google Maps Directions
+ * link is: a normal <a href> with no JavaScript in the way. This is a deliberate change from
+ * an earlier attempt that used a custom app:// / intent:// link triggered by a button's
+ * onclick — those are blocked in a lot of contexts (embedded previews, iframes, some mobile
+ * browsers) because they require a very strict "this came directly from a tap" condition that
+ * breaks easily. A plain https link doesn't have that problem: it works the same everywhere
+ * Directions does.
+ *
+ * HONESTY NOTE on what this can and can't promise: Jugnoo has not published an official
+ * deep-link spec, so there is no confirmed, documented way to hand it a pickup/drop location.
+ * This link points at Jugnoo's own real domain with best-effort location parameters attached
+ * (pickup_lat/pickup_lng from this page's current location if known, drop_lat/drop_lng/
+ * drop_address for the place you tapped) in case their app reads them — if Jugnoo has set up
+ * Android App Links / iOS Universal Links for jugnoo.in (the same mechanism that lets a Google
+ * Maps link open the Maps app instead of a browser), tapping this may open their app directly
+ * and the phone may ask once whether to open it in the app or the browser. If they haven't
+ * set that up, or don't read these parameters, it opens their website instead, from where the
+ * app can still be downloaded or opened.
+ */
+function jugnooUrl(lat, lng, label){
+  const params = [];
+  if(userLoc){ params.push(`pickup_lat=${userLoc.lat}`, `pickup_lng=${userLoc.lng}`); }
+  if(lat!=null && lng!=null){ params.push(`drop_lat=${lat}`, `drop_lng=${lng}`, `drop_address=${encodeURIComponent(label||'')}`); }
+  params.push('utm_source=helpkitmanipur');
+  return `https://www.jugnoo.in/?${params.join('&')}`;
+}
 function categoryIllustration(cat){
   const illos = {
     hotel: `<svg viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
@@ -71,19 +106,19 @@ function isEveningNow(){
 }
 
 /* ---------- TAB SWITCHING ---------- */
-document.getElementById('tabExploreBtn').onclick=()=>{
-  document.getElementById('tabExploreBtn').classList.add('active');
-  document.getElementById('tabPlanBtn').classList.remove('active');
-  document.getElementById('tabExplore').style.display='block';
-  document.getElementById('tabPlan').style.display='none';
-};
-document.getElementById('tabPlanBtn').onclick=()=>{
-  document.getElementById('tabPlanBtn').classList.add('active');
-  document.getElementById('tabExploreBtn').classList.remove('active');
-  document.getElementById('tabPlan').style.display='block';
-  document.getElementById('tabExplore').style.display='none';
-  renderPlan(currentPlan);
-};
+function showTab(name){
+  const tabs = {explore:'tabExplore', plan:'tabPlan', reviews:'tabReviews'};
+  const btns = {explore:'tabExploreBtn', plan:'tabPlanBtn', reviews:'tabReviewsBtn'};
+  Object.keys(tabs).forEach(k=>{
+    document.getElementById(tabs[k]).style.display = (k===name) ? 'block' : 'none';
+    document.getElementById(btns[k]).classList.toggle('active', k===name);
+  });
+  if(name==='plan') renderPlan(currentPlan);
+  if(name==='reviews' && !reviewsInitDone) initReviewsSystem();
+}
+document.getElementById('tabExploreBtn').onclick=()=>showTab('explore');
+document.getElementById('tabPlanBtn').onclick=()=>showTab('plan');
+document.getElementById('tabReviewsBtn').onclick=()=>showTab('reviews');
 
 /* ---------- CUSTOM LOCATION ---------- */
 document.getElementById('customLocBtn').onclick=()=>{
@@ -136,8 +171,11 @@ function renderSpots(){
     el.onclick=()=>{ activeSpot=s; renderSpots(); renderList(); };
     row.appendChild(el);
   });
+  const spotSafetyKey = reviewKeyForSpot(activeSpot);
+  const spotSafetyN = safetyCounts[spotSafetyKey] || 0;
   document.getElementById('spotDesc').innerHTML =
-    `<b>${activeSpot.name}</b> — ${activeSpot.desc} <b style="float:right; color:var(--accent-dark)">${activeSpot.fee||''}</b>`;
+    `<b>${activeSpot.name}</b> — ${activeSpot.desc} <b style="float:right; color:var(--accent-dark)">${activeSpot.fee||''}</b>
+     ${spotSafetyN>0 ? `<div class="safety-banner" style="margin-top:8px; cursor:pointer;" onclick="goToReviewsFor('${spotSafetyKey}')">⚠️ ${spotSafetyN} recent safety report${spotSafetyN>1?'s':''} here — tap to read</div>` : ''}`;
   document.getElementById('eveningNote').style.display = isEveningNow() ? 'block' : 'none';
   renderStats();
 }
@@ -195,12 +233,14 @@ function renderList(){
     return;
   }
 
-  const catIcon = {hotel:'🛏️',hospital:'🏥',cafe:'☕',restaurant:'🍽️'};
+  const catIcon = {hotel:'🛏️',hospital:'🏥',police:'🚓',cafe:'☕',restaurant:'🍽️'};
   items.forEach((p, idx)=>{
     const card=document.createElement('div');
     card.className='card';
     const priceStr = p.pl ? '₹'.repeat(p.pl) : '';
     const detailId = 'detail-'+idx;
+    const placeKey = reviewKeyForPlace(p);
+    const placeSafetyN = safetyCounts[placeKey] || 0;
     let priceRow = '';
     if(p.c==='hotel'){
       const pr = priceRangeFor(p.pl);
@@ -215,10 +255,11 @@ function renderList(){
           <h3>${searchTerm ? (catIcon[p.c]||'')+' ' : ''}${p.n}</h3>
           <p class="addr">${p.a}</p>
           <div class="badges">
-            <span class="badge rating">⭐ ${p.r} (${p.rc})</span>
+            ${p.r!=null ? `<span class="badge rating">⭐ ${p.r} (${p.rc})</span>` : `<span class="badge">ℹ️ No public rating yet</span>`}
             ${priceStr ? `<span class="badge">${priceStr}</span>` : ''}
             ${p.tag ? `<span class="badge">${p.tag}</span>` : ''}
           </div>
+          ${placeSafetyN>0 ? `<div class="safety-banner" style="cursor:pointer; margin-top:4px;" onclick="goToReviewsFor('${placeKey}')">⚠️ ${placeSafetyN} safety report${placeSafetyN>1?'s':''} — tap to read</div>` : ''}
         </div>
         <div class="dist">
           <b>${fmtKm(p.dSpot)}</b>from ${activeSpot.name.split(' ')[0]}
@@ -229,12 +270,13 @@ function renderList(){
       <div class="actions">
         <a class="a-map" href="${mapsViewUrl(p)}" target="_blank" rel="noopener">🗺️ View on Maps</a>
         <a class="a-dir" href="${mapsDirUrl(p)}" target="_blank" rel="noopener">🧭 Directions</a>
-        <button class="a-dir" onclick="togglePreview('${detailId}')" style="cursor:pointer;">🖼️ Preview</button>
+        <a class="a-dir" href="${jugnooUrl(p.lat,p.lng,p.n)}" target="_blank" rel="noopener">🛺 Jugnoo</a>
       </div>
-      <div class="preview-box" id="${detailId}" style="display:none;">
-        ${categoryIllustration(p.c)}
-        <p>This is a generic illustration, not an actual photo of ${p.n}.
-        <a href="${mapsViewUrl(p)}" target="_blank" rel="noopener">See real photos on Google Maps →</a></p>
+      <div class="actions">
+        <a class="a-dir" href="${officialWebsiteUrl(p)}" target="_blank" rel="noopener" style="flex:1; text-align:center;">🌐 Official Website</a>
+      </div>
+      <div class="actions">
+        <button class="a-dir" onclick="goToReviewsFor('${placeKey}')" style="cursor:pointer; flex:1;">⭐ Read/write reviews</button>
       </div>
       ${p.ph
         ? `<div class="contact-row">
@@ -372,9 +414,17 @@ function renderPlan(plan){
           <span>Day ${idx+1} of ${plan.length}</span>
         </div>
       </div>
-      ${day.stops.map(st=>{
+      ${day.stops.map((st,si)=>{
         const spot=spotById(st.id);
-        return `<div class="stop">
+        let segmentRow = '';
+        if(si>0){
+          const prevSpot = spotById(day.stops[si-1].id);
+          const segKm = haversine(prevSpot.lat, prevSpot.lng, spot.lat, spot.lng);
+          segmentRow = `<div class="travel-segment">↳ ${fmtKm(segKm)} from ${prevSpot.name.split(' ')[0]}
+            <a class="a-copy" href="${jugnooUrl(spot.lat,spot.lng,spot.name)}" target="_blank" rel="noopener" style="margin-left:6px; text-decoration:none;">🛺 Open Jugnoo</a>
+          </div>`;
+        }
+        return `${segmentRow}<div class="stop">
           <div class="stop-time">${st.time}</div>
           <div class="stop-body">
             <h4>${spot.name}</h4>
@@ -396,6 +446,7 @@ function renderPlan(plan){
             <div style="display:flex; gap:10px;">
               ${h.ph ? `<a href="tel:${h.ph.replace(/\s/g,'')}">📞 ${h.ph}</a>` : `<a href="${mapsViewUrl(h)}" target="_blank" rel="noopener">Contact on Maps</a>`}
               <a href="${mapsDirUrl(h)}" target="_blank" rel="noopener">Directions</a>
+              <a href="${jugnooUrl(h.lat,h.lng,h.n)}" target="_blank" rel="noopener">🛺 Open Jugnoo</a>
             </div>
           </div>
         `;}).join('')}
@@ -403,6 +454,347 @@ function renderPlan(plan){
     `;
     wrap.appendChild(card);
   });
+}
+
+/* ================= COMPULSORY SIGN-IN GATE ================= */
+let gatePassed = false;
+let gateAuthorName = '';
+let gateAuthorId = null; // set only when a real signed-in account was silently detected
+
+function showGate(pass){
+  document.getElementById('signInGatePanel').style.display = pass ? 'none' : 'block';
+  document.getElementById('signedInBadge').style.display = pass ? 'block' : 'none';
+  document.getElementById('reviewFormPanel').style.display = pass ? 'block' : 'none';
+  document.getElementById('feedbackFormPanel').style.display = pass ? 'block' : 'none';
+  if(pass){ document.getElementById('signedInName').textContent = gateAuthorName || 'you'; }
+}
+
+document.getElementById('signInGoogleBtn').onclick = async ()=>{
+  // Try a silent account check first (no visible branding either way).
+  try{
+    if(window.claude && typeof window.claude.use === 'function'){
+      const u = await window.claude.use('user');
+      if(u){
+        const me = await u.me();
+        if(me && me.id && me.name){
+          gateAuthorId = me.id;
+          gateAuthorName = me.name;
+          gatePassed = true;
+          showGate(true);
+          return;
+        }
+      }
+    }
+  }catch(e){ /* fall through to manual form below */ }
+  document.getElementById('mobileSignInForm').style.display = 'none';
+  document.getElementById('googleSignInForm').style.display = 'block';
+};
+
+document.getElementById('googleContinueBtn').onclick = ()=>{
+  const name = document.getElementById('googleNameInput').value.trim();
+  const email = document.getElementById('googleEmailInput').value.trim();
+  const msgEl = document.getElementById('googleGateMsg');
+  if(name.length<2){ msgEl.textContent='⚠️ Please enter your name.'; return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ msgEl.textContent='⚠️ Please enter a valid email address.'; return; }
+  gateAuthorName = name;
+  gateAuthorId = null;
+  gatePassed = true;
+  msgEl.textContent = '';
+  showGate(true);
+};
+
+document.getElementById('signInMobileBtn').onclick = ()=>{
+  document.getElementById('googleSignInForm').style.display = 'none';
+  document.getElementById('mobileSignInForm').style.display = 'block';
+};
+
+document.getElementById('mobileContinueBtn').onclick = ()=>{
+  const name = document.getElementById('gateNameInput').value.trim();
+  const mobile = document.getElementById('gateMobileInput').value.trim().replace(/\D/g,'');
+  const msgEl = document.getElementById('mobileGateMsg');
+  if(name.length<2){ msgEl.textContent='⚠️ Please enter your name.'; return; }
+  if(!/^\d{10}$/.test(mobile)){ msgEl.textContent='⚠️ Please enter a valid 10-digit mobile number.'; return; }
+  gateAuthorName = name;
+  gateAuthorId = null;
+  gatePassed = true;
+  msgEl.textContent = '';
+  showGate(true);
+};
+
+document.getElementById('gateSignOutBtn').onclick = ()=>{
+  gatePassed = false; gateAuthorName=''; gateAuthorId=null;
+  document.getElementById('googleSignInForm').style.display='none';
+  document.getElementById('mobileSignInForm').style.display='none';
+  document.getElementById('googleNameInput').value='';
+  document.getElementById('googleEmailInput').value='';
+  document.getElementById('gateNameInput').value='';
+  document.getElementById('gateMobileInput').value='';
+  showGate(false);
+};
+
+/* ================= REVIEWS & SAFETY SYSTEM ================= */
+let reviewsInitDone = false;
+let dbMode = false;
+let dbRef = null;
+let safetyCounts = {};       // locationKey -> count of safety-flagged reviews
+let unsubSafetyAll = null;
+let unsubLocationReviews = null;
+let currentReviewTarget = null; // {key, label}
+let selectedStars = 0;
+
+function slug(str){
+  return str.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+}
+function reviewKeyForSpot(s){ return 'spot_'+s.id; }
+function reviewKeyForPlace(p){ return 'place_'+slug(p.n); }
+const CAT_GROUP_LABEL = {hotel:'Hotels', hospital:'Hospitals', police:'Police Stations', cafe:'Cafés', restaurant:'Restaurants'};
+
+function buildReviewTargets(){
+  const targets = TOURIST_SPOTS.map(s=>({key:reviewKeyForSpot(s), label:s.name, group:'Tourist Spots'}));
+  PLACES.forEach(p=>targets.push({key:reviewKeyForPlace(p), label:p.n, group:CAT_GROUP_LABEL[p.c]||'Other'}));
+  return targets;
+}
+const REVIEW_TARGETS = buildReviewTargets();
+
+/* ---- localStorage fallback (used when shared db is unavailable, e.g. self-hosted copies) ---- */
+function lsLoadAll(){
+  try{ return JSON.parse(localStorage.getItem('hkm_reviews')||'[]'); }catch(e){ return []; }
+}
+function lsSaveAll(arr){
+  try{ localStorage.setItem('hkm_reviews', JSON.stringify(arr)); }catch(e){}
+}
+function lsAdd(review){
+  const all = lsLoadAll();
+  review.id = 'local_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  all.push(review);
+  lsSaveAll(all);
+  return review;
+}
+function lsForLocation(key){
+  return lsLoadAll().filter(r=>r.locationKey===key).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+}
+function lsSafetyCounts(){
+  const counts={};
+  lsLoadAll().forEach(r=>{ if(r.safety) counts[r.locationKey]=(counts[r.locationKey]||0)+1; });
+  return counts;
+}
+function lsAddFeedback(text){
+  try{
+    const all = JSON.parse(localStorage.getItem('hkm_site_feedback')||'[]');
+    all.push({text, createdAt:new Date().toISOString()});
+    localStorage.setItem('hkm_site_feedback', JSON.stringify(all));
+  }catch(e){}
+}
+
+/* ---- initialize: try shared db capability, fall back to localStorage ---- */
+async function initReviewsSystem(){
+  reviewsInitDone = true;
+  try{
+    if(window.claude && typeof window.claude.use === 'function'){
+      const d = await window.claude.use('db');
+      if(d){ dbRef = d; dbMode = true; }
+    }
+  }catch(e){ dbMode = false; }
+
+  if(dbMode){
+    try{
+      unsubSafetyAll = dbRef.collection('reviews').where('safety','==',true).onSnapshot(
+        snap=>{
+          const counts={};
+          snap.docs.forEach(doc=>{
+            const data = doc.data();
+            if(data && data.locationKey) counts[data.locationKey] = (counts[data.locationKey]||0)+1;
+          });
+          safetyCounts = counts;
+          refreshSafetyUI();
+        },
+        ()=>{ dbMode=false; safetyCounts = lsSafetyCounts(); refreshSafetyUI(); }
+      );
+    }catch(e){ dbMode = false; }
+  }
+  if(!dbMode){
+    safetyCounts = lsSafetyCounts();
+  }
+  renderReviewLocationSelect();
+  refreshSafetyUI();
+  const noteEl = document.getElementById('reviewsStorageNote');
+  if(noteEl){
+    noteEl.innerHTML = dbMode
+      ? '🌍 Reviews and safety reports here are <b>shared</b> — everyone who opens this page sees the same list live, including yours, right after you sign in above to post.'
+      : '🔒 Shared reviews aren\'t available in this copy of the page (e.g. a version hosted outside this site\'s own server), so entries are saved privately in <b>your own browser</b> only — they will reappear next time you open this site on this device, but nobody else sees them.';
+  }
+}
+
+function refreshSafetyUI(){
+  renderSpots();
+  renderList();
+}
+
+function renderReviewLocationSelect(){
+  const sel = document.getElementById('reviewLocationSelect');
+  const groups = {};
+  REVIEW_TARGETS.forEach(t=>{ (groups[t.group] = groups[t.group]||[]).push(t); });
+  sel.innerHTML = '';
+  Object.keys(groups).forEach(g=>{
+    const og = document.createElement('optgroup');
+    og.label = g;
+    groups[g].forEach(t=>{
+      const opt = document.createElement('option');
+      opt.value = t.key; opt.textContent = t.label;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  sel.onchange = ()=>{
+    const t = REVIEW_TARGETS.find(x=>x.key===sel.value);
+    selectReviewTarget(t);
+  };
+  selectReviewTarget(REVIEW_TARGETS[0]);
+  sel.value = REVIEW_TARGETS[0].key;
+}
+
+function selectReviewTarget(target){
+  currentReviewTarget = target;
+  if(unsubLocationReviews){ unsubLocationReviews(); unsubLocationReviews=null; }
+  if(dbMode){
+    try{
+      unsubLocationReviews = dbRef.collection('reviews').where('locationKey','==',target.key).onSnapshot(
+        snap=>{
+          const list = snap.docs.map(d=>({id:d.id, ...d.data()}));
+          list.sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''));
+          renderReviewSummary(list);
+          renderReviewsList(list);
+        },
+        ()=>{
+          const list = lsForLocation(target.key);
+          renderReviewSummary(list);
+          renderReviewsList(list);
+        }
+      );
+      return;
+    }catch(e){ /* fall through to local */ }
+  }
+  const list = lsForLocation(target.key);
+  renderReviewSummary(list);
+  renderReviewsList(list);
+}
+
+function renderReviewSummary(list){
+  const panel = document.getElementById('reviewSummaryPanel');
+  if(list.length===0){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  const ratings = list.filter(r=>r.rating).map(r=>r.rating);
+  const avg = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : '—';
+  const safetyN = list.filter(r=>r.safety).length;
+  panel.innerHTML = `
+    <div class="summary-row">
+      <b>⭐ ${avg}</b>
+      <div style="font-size:0.8rem; color:var(--muted);">${list.length} review(s) for ${currentReviewTarget.label}</div>
+    </div>
+    ${safetyN>0 ? `<div class="safety-banner">⚠️ ${safetyN} safety report${safetyN>1?'s':''} for this location — see below</div>` : ''}
+  `;
+}
+
+function renderReviewsList(list){
+  const wrap = document.getElementById('reviewsList');
+  wrap.innerHTML = '';
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty">No reviews yet for ${currentReviewTarget ? currentReviewTarget.label : 'this place'} — be the first to add one.</div>`;
+    return;
+  }
+  list.forEach(r=>{
+    const card=document.createElement('div');
+    card.className = 'review-card'+(r.safety?' safety':'');
+    const d = r.createdAt ? new Date(r.createdAt) : null;
+    const dateStr = d ? d.toLocaleDateString() : '';
+    card.innerHTML = `
+      <div class="rc-meta">
+        <span class="review-stars">${'★'.repeat(r.rating||0)}${'☆'.repeat(5-(r.rating||0))}</span>
+        <span class="rc-date">${dateStr}</span>
+      </div>
+      <p style="font-size:0.75rem; color:var(--muted); margin:0 0 4px; font-weight:600;">${(r.authorName||'Traveller').replace(/</g,'&lt;')}</p>
+      <p>${(r.text||'').replace(/</g,'&lt;')}</p>
+      ${r.safety ? `<span class="rc-flag">⚠️ Flagged as a safety concern</span>` : ''}
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+/* Star picker */
+document.getElementById('starPicker').querySelectorAll('span').forEach(star=>{
+  star.onclick = ()=>{
+    selectedStars = parseInt(star.dataset.v);
+    document.getElementById('starPicker').querySelectorAll('span').forEach(s=>{
+      s.classList.toggle('on', parseInt(s.dataset.v) <= selectedStars);
+    });
+  };
+});
+
+document.getElementById('submitReviewBtn').onclick = async ()=>{
+  const msgEl = document.getElementById('reviewMsg');
+  if(!gatePassed){ msgEl.textContent='⚠️ Please sign in above first — Google or mobile number.'; return; }
+  const text = document.getElementById('reviewText').value.trim();
+  const safety = document.getElementById('safetyCheck').checked;
+  if(!selectedStars){ msgEl.textContent='⚠️ Please pick a star rating first.'; return; }
+  if(safety && text.length<5){ msgEl.textContent='⚠️ Please describe the safety concern briefly so others understand it.'; return; }
+  const payload = {
+    locationKey: currentReviewTarget.key,
+    locationName: currentReviewTarget.label,
+    rating: selectedStars,
+    text,
+    safety,
+    authorName: gateAuthorName || 'Traveller',
+    authorId: gateAuthorId || null,
+    createdAt: new Date().toISOString(),
+  };
+  msgEl.textContent = 'Posting…';
+  if(dbMode){
+    try{
+      await dbRef.collection('reviews').add(payload);
+      msgEl.textContent = '✅ Posted — visible to everyone viewing this page.';
+    }catch(e){
+      lsAdd(payload);
+      selectReviewTarget(currentReviewTarget);
+      msgEl.textContent = '✅ Saved on this device (shared posting unavailable right now).';
+    }
+  } else {
+    lsAdd(payload);
+    selectReviewTarget(currentReviewTarget);
+    msgEl.textContent = '✅ Saved on this device.';
+  }
+  document.getElementById('reviewText').value='';
+  document.getElementById('safetyCheck').checked=false;
+  selectedStars=0;
+  document.getElementById('starPicker').querySelectorAll('span').forEach(s=>s.classList.remove('on'));
+};
+
+document.getElementById('submitSiteFeedbackBtn').onclick = async ()=>{
+  const msgEl = document.getElementById('siteFeedbackMsg');
+  if(!gatePassed){ msgEl.textContent='⚠️ Please sign in above first — Google or mobile number.'; return; }
+  const text = document.getElementById('siteFeedbackText').value.trim();
+  if(text.length<3){ msgEl.textContent='⚠️ Please write a little more detail.'; return; }
+  msgEl.textContent = 'Sending…';
+  if(dbMode){
+    try{
+      await dbRef.collection('feedback').add({text, authorName: gateAuthorName || 'Traveller', authorId: gateAuthorId || null, createdAt:new Date().toISOString()});
+      msgEl.textContent = '✅ Thanks — your feedback was sent.';
+    }catch(e){
+      lsAddFeedback(text);
+      msgEl.textContent = '✅ Saved on this device (shared sending unavailable right now).';
+    }
+  } else {
+    lsAddFeedback(text);
+    msgEl.textContent = '✅ Saved on this device.';
+  }
+  document.getElementById('siteFeedbackText').value='';
+};
+
+function goToReviewsFor(key){
+  showTab('reviews');
+  const sel = document.getElementById('reviewLocationSelect');
+  sel.value = key;
+  const t = REVIEW_TARGETS.find(x=>x.key===key);
+  if(t) selectReviewTarget(t);
 }
 
 renderSpotChecks();
