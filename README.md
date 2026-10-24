@@ -1,132 +1,95 @@
-# Help Kit and Location Finder for Manipur Tourist Places
+# Help Kit Manipur — Tours & Travels
 
-A free, no-login-required travel companion for exploring Manipur — find nearby hotels,
-hospitals, cafés, restaurants, police stations and washrooms around 11 major tourist spots,
-with live distances, a customizable multi-day trip planner, one-tap links to Google Maps,
-Jugnoo (North-East India's auto/e-rickshaw/bike ride app), and each place's official website,
-plus a Play-Store-style reviews and safety-reporting section.
+A free trip-companion website for Manipur: nearby hotels/restaurants/hospitals/police
+stations with live distances, a day-by-day trip planner, a bus timetable with a
+"missed it?" fallback, flight links, and traveller reviews & safety reports.
 
-## Folder structure
+Plain HTML/CSS/JS, no build step, no server required.
 
 ```
-help-kit-manipur/
-├── index.html          → Page structure (header, tabs, containers). Open this file to run the site.
-├── css/
-│   └── style.css       → All styling: colors, layout, light/dark theme, card & button design
-├── js/
-│   ├── data.js           → All content: tourist spots, hotels/hospitals/cafes/restaurants/police,
-│   │                       the example itinerary
-│   └── app.js             → All behavior: search, distance calculation, location handling,
-│                           trip-planner generation, the sign-in gate, and the reviews/safety system
-└── README.md            → This file
+index.html
+css/style.css
+js/config.js ← your Google Places API key goes here (optional — see below)
+js/data.js   ← all sample data (places, bus routes, reviews) — edit this first
+js/app.js    ← all interactive behaviour
 ```
 
-Nothing else is needed to just *run* the site — no build step, no database to install, no
-server-side code required. It's a static site at its core.
+## Run it locally
+Just open `index.html` in a browser. (Opening it via `file://` is fine, but some
+browsers restrict geolocation on `file://` — if "Use my location" doesn't prompt,
+use "Enter location manually" instead, or serve it locally, e.g. `python3 -m http.server`.)
 
-## Running it locally
+## Put it on GitHub Pages (free hosting)
+1. Create a new GitHub repository and push these three items (`index.html`, `css/`, `js/`) to its root — and `README.md` if you'd like.
+2. In the repo, go to **Settings → Pages**.
+3. Under **Build and deployment**, set **Source** to "Deploy from a branch", pick the `main` branch and `/ (root)` folder, then **Save**.
+4. GitHub will publish the site at `https://<your-username>.github.io/<repo-name>/` within a minute or two.
 
-Double-click `index.html`, or open it in any browser.
-(Some browsers restrict `fetch`/geolocation on `file://` URLs — if "Use my location" doesn't
-prompt, use one of the hosting options below instead.)
+## Live nearby results (Google Places API)
+By default, "Explore Nearby" uses the sample list in `js/data.js`. To make it pull
+real, live places around the user — exactly like the original site — give it a
+free Google Places API key:
 
-## Hosting it for free (so it has a real, shareable URL)
+1. Go to [console.cloud.google.com](https://console.cloud.google.com), sign in,
+   and create (or select) a project.
+2. **APIs & Services → Library** — enable **"Places API"** and **"Maps JavaScript API"**.
+3. **APIs & Services → Credentials → Create Credentials → API key.**
+4. Click the new key and lock it down (important — an unrestricted key is a liability):
+   - **Application restrictions:** HTTP referrers → add your GitHub Pages URL
+     (e.g. `https://your-username.github.io/*`) and, for local testing,
+     `http://localhost:8000/*`.
+   - **API restrictions:** restrict the key to just "Places API" and "Maps JavaScript API".
+5. Google requires a billing account linked even to use the free tier — it comes
+   with a recurring free usage allowance that comfortably covers a small site like
+   this one. In **Billing → Budgets & alerts**, set a budget alert (e.g. $5) so
+   you're notified well before anything is ever charged.
+6. Paste the key into `js/config.js`:
+   ```js
+   const GOOGLE_PLACES_API_KEY = "your-key-here";
+   ```
+7. Push the change and reload the site. "Explore Nearby" will now show real
+   hotels, restaurants, cafes, hospitals, police stations, pharmacies and ATMs
+   around whatever location is set, sorted by real distance, with rating,
+   review count, an "Open now"/"Closed" tag, and working **View on Maps**,
+   **Directions**, **Official Website** and **Call** buttons.
 
-Pick any one:
+**A note on cost:** ratings, review counts, price level, address and open-now
+status come back for free with the nearby search itself. Phone number and
+website require a separate "Place Details" call per business, which Google
+bills slightly differently — to keep this cheap, the app only fetches those
+details for the category you're actually looking at (tap "Hotels", then
+"Restaurants", etc.), never all seven categories at once.
 
-1. **Netlify Drop** — https://app.netlify.com/drop — drag the whole `help-kit-manipur` folder
-   onto the page. You get a live URL immediately.
-2. **GitHub Pages** — create a free GitHub repo, upload all these files (keeping the folder
-   structure), then in the repo's Settings → Pages, enable Pages from the main branch.
-3. **Vercel** or **Firebase Hosting** — similar drag-and-deploy free tiers.
+**Nothing breaks if you skip this.** Leave `GOOGLE_PLACES_API_KEY` blank and the
+page automatically uses the sample list — same for an invalid key, a network
+error, or a quota/billing issue: Explore Nearby quietly falls back to the saved
+sample data and shows a one-line notice instead of breaking.
 
-## Getting it into Google Search
+## Explore Nearby — what each button does
+- **View on Maps** — opens the exact place on Google Maps (uses its `place_id` when live, a name+address search otherwise).
+- **Directions** — opens Google Maps turn-by-turn directions to that place.
+- **Jugnoo** — opens [jugnoo.in](https://www.jugnoo.in/), a real regional ride-booking service; this is a plain link to their site, not an in-app booking integration.
+- **Official Website / Read-write reviews / Call** — only shown when that data is actually available (Place Details for live results, or the sample contact info in `js/data.js`). In sample mode, "Read/write reviews" jumps to the site's own Reviews & Safety tab instead of Google's.
+- **AC/Non-AC price, "avg cost for two", etc.** — Google doesn't expose real room rates or menu prices, so these are estimate ranges derived from Google's 0–4 `price_level` signal (or a fixed tier in sample mode), always labelled "(estimate — confirm with business)".
 
-Hosting alone doesn't make Google find it. After hosting:
-1. Go to Google Search Console (search.google.com/search-console).
-2. Add and verify your new site's URL.
-3. Submit the URL for indexing.
-Google typically crawls and lists it within a few days to a couple of weeks.
+## Trip Planner scheduling
+The planner simulates each day starting at 9:00 AM, estimates travel time
+between stops (25 km/h average, reflecting winding hill roads) plus a typical
+visit length per place, and stops adding new sightseeing once the *next* stop
+would arrive at or after 4:30 PM — matching the sunset-safety guidance shown
+on the page. Instead, each day ends with a "settle in for the night" block
+suggesting the nearest restaurant and hotel to wherever that day's last stop
+was. Up to 15 days are supported; anything that doesn't fit is listed at the
+bottom so you know to add another day.
 
-## On the "🌐 Official Website" button
-
-Every hotel, hospital, café, and restaurant card has this button.
-- For **10 places** (Shija Hospitals, RIMS, and all 8 police stations, which link to the
-  official Manipur Police portal) it links to a **confirmed real official website**.
-- For everywhere else — most small local hotels, homestays, cafés, and restaurants — there is
-  genuinely no official website (they run off Facebook/Instagram/Zomato instead of their own
-  site), so rather than invent or guess a URL, the button opens a Google search for
-  `"<place name> official website"` instead. This is intentional: it's more honest than a fake
-  or broken link, and it still gets the visitor to the right place if one exists.
-- To add a confirmed official site for any place, open `js/data.js` and add a `web:"https://..."`
-  field to that place's object (see the Shija Hospitals or RIMS entries for the pattern).
-
-## On the Jugnoo button
-
-Every place card and trip-planner stop has a "🛺 Jugnoo" link next to "🧭 Directions." It's a
-**plain `https://www.jugnoo.in/...` link** — built the exact same way as the Google Maps
-Directions link (a normal `<a href>`, no JavaScript app-launching tricks) — with the current
-location (if known) and the destination attached as URL parameters (`pickup_lat`, `pickup_lng`,
-`drop_lat`, `drop_lng`, `drop_address`).
-
-**Honesty note:** Jugnoo has not published an official deep-link specification, so there's no
-confirmed way to make their app open directly with these points pre-filled. Whether tapping this
-link opens their *app* automatically (with a native "open in app?" prompt) or just their
-*website* depends entirely on whether Jugnoo has registered Android App Links / iOS Universal
-Links for `jugnoo.in` on their end — that's outside this site's control. An earlier version of
-this feature tried to force-launch the app via a custom `intent://`/`jugnoo://` link triggered
-by JavaScript; that approach was unreliable (it only works when the browser is certain a tap
-triggered it directly, which breaks easily in embedded/preview contexts), so it was replaced
-with this simpler, more universally reliable plain link.
-
-## ⚠️ Important: the Reviews & Safety tab needs a real backend to be *shared*
-
-This copy of the site includes a "🗣️ Reviews & Safety" tab where visitors can:
-- Leave a star rating + written review for any tourist spot, hotel, café, restaurant,
-  hospital or police station.
-- Flag a safety concern (crisis, conflict, accidental fight, etc.) so other travellers see it.
-- Send general feedback about the website itself.
-- Sign in first (via "Continue with Google" or "Continue with Mobile Number") so every post —
-  review, safety report, or site feedback — carries a name. Both forms share one sign-in gate.
-
-**How this behaves depends on where the file is opened:**
-- When viewed through the original published link this was built from, reviews are backed
-  by a real shared data store — everyone who opens that link sees the same list, live.
-- **When you host this exported copy yourself** (GitHub Pages, Netlify, your own server, etc.),
-  there is no shared backend wired up, so the code automatically falls back to
-  **`localStorage`** — each visitor's reviews are saved only in *their own browser* and are
-  **not visible to other visitors**. You'll still see your own entries persist across visits
-  on the same device, but it won't work as a shared public review board until you connect
-  a real database.
-
-**To make reviews genuinely shared on your own hosting**, you'd need to wire `js/app.js`'s
-`dbMode` functions (`initReviewsSystem`, `selectReviewTarget`, the submit handlers) up to a
-real backend — e.g. Firebase Firestore, Supabase, or a small custom API. The code is already
-structured so that swapping in a different backend only touches those functions — everything
-else (the UI, the star picker, the safety flagging, the sign-in gate) stays the same.
-
-**On the sign-in gate itself, to be fully transparent:** neither the "Google" nor the "Mobile
-Number" option in this exported copy performs real verification — there's no server here to
-run OAuth or send an SMS code. Both simply ask for a name (and email or phone number, used only
-to validate format, never stored) before unlocking the review/feedback forms. This stops silent,
-nameless posting, but it is not fraud-proof identity verification. Real verification would need
-an actual auth provider (Firebase Auth, Auth0, Google Identity Services, etc.) wired into a
-real backend.
-
-## Editing the data
-
-- To add/edit hotels, hospitals, cafés, restaurants, police stations, or tourist spots: open
-  `js/data.js`. Each entry is a plain JavaScript object — copy an existing one and change the values.
-- To change colors, fonts, or spacing: open `css/style.css` and edit the `:root` CSS variables
-  near the top for a quick global re-theme.
-- To change behavior (search logic, itinerary generation, price estimates, the sign-in gate,
-  the reviews system, the Jugnoo link, or the official-website link): open `js/app.js`.
-
-## Notes on data accuracy
-
-- Place details (names, ratings, coordinates, phone numbers, official websites) come from data
-  gathered at the time this site was built — verify anything time-sensitive (hours, prices,
-  phone numbers, live websites) independently.
-- Hotel AC/Non-AC price ranges are **estimates** based on general price tier, not live rates.
-- "Use my location" and "Enter location manually" both use the browser's own geolocation
-  permission or manual input — no account is required to use the map/finder features.
+## What's real vs. sample data
+- **Real and working:** browser geolocation, distance calculations, the Google Maps
+  washroom-search link, the IndiGo/Air India links, and all of the client-side logic
+  (filtering, sorting, the trip planner, the bus "missed it?" flow, posting a review).
+- **Sample/placeholder by default, real if you add a key:** the hotels/restaurants/
+  hospitals/police stations list uses `js/data.js` unless you add a Google Places
+  API key to `js/config.js` (see above), at which point it switches to live results
+  automatically. The bus operators/times/fares and seeded reviews are still sample
+  data — there's no public live feed for Manipur's bus operators to plug in yet.
+- **Not persisted:** sign-in, posted reviews, and feedback only exist in the browser
+  tab for that session — there's no backend or database behind them yet.
