@@ -25,6 +25,25 @@ use "Enter location manually" instead, or serve it locally, e.g. `python3 -m htt
 3. Under **Build and deployment**, set **Source** to "Deploy from a branch", pick the `main` branch and `/ (root)` folder, then **Save**.
 4. GitHub will publish the site at `https://<your-username>.github.io/<repo-name>/` within a minute or two.
 
+## Put it on Render (same host as the original site)
+This is the same free-tier host the original Help Kit site runs on
+(`tours-and-travels-hd65.onrender.com`). Since this project is a plain static
+site — no server, no build step — it deploys the same way:
+1. Push `index.html`, `css/`, `js/` and `README.md` to a GitHub repository (same first step as above).
+2. On [render.com](https://render.com), click **New → Static Site** and connect that repository.
+3. Leave **Build Command** empty and set **Publish Directory** to `.` (the repo root) — there's nothing to build.
+4. Click **Create Static Site**. Render gives you a live `https://<your-site-name>.onrender.com` URL, usually within a minute.
+
+**This will behave identically to what you see in the Claude preview above and
+to a GitHub Pages deployment** — same HTML/CSS/JS, served as-is, no backend
+anywhere, so there's nothing to keep "in sync" between them beyond pushing the
+same files. The one difference: in this chat, the preview runs inside a
+sandboxed iframe, which blocks the "Use my location" button from getting a GPS
+fix (it shows a clear message after a few seconds instead of hanging). That
+restriction is specific to being embedded inside Claude's own interface — once
+deployed on Render or GitHub Pages, the page runs as a normal top-level site
+and geolocation works the ordinary way, no code changes needed.
+
 ## Live nearby results (Google Places API)
 By default, "Explore Nearby" uses the sample list in `js/data.js`. To make it pull
 real, live places around the user — exactly like the original site — give it a
