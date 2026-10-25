@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Help Kit Manipur</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">☰</button>
+    <div class="brand">
+      <span class="brand-logo">🧭</span>
+      <div class="brand-text">
+        <h1>Help Kit Manipur</h1>
+        <span class="brand-sub">Tours &amp; Travels</span>
+      </div>
+    </div>
+    <div class="loc-indicator" id="locIndicator">Location not set</div>
+  </div>
+</header>
+
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<nav class="drawer" id="drawerMenu">
+  <div class="drawer-head">
+    <span class="brand-logo">🧭</span>
+    <div>
+      <h2>Help Kit Manipur</h2>
+      <span class="brand-sub">Menu</span>
+    </div>
+  </div>
+  <div class="drawer-item active" data-target="tabExplore" id="navExplore">📍 Explore nearby</div>
+  <div class="drawer-item" data-target="tabPlan" id="navPlan">🗺️ Trip planner</div>
+  <div class="drawer-item" data-target="tabBus" id="navBus">🚌 Bus routes</div>
+  <div class="drawer-item" data-target="tabFlights" id="navFlights">✈️ Flights</div>
+  <div class="drawer-item" data-target="tabReviews" id="navReviews">⚠️ Reviews &amp; safety</div>
+  <div class="drawer-footer">Free, open guide — no account needed to read.</div>
+</nav>
+
+<div class="wrap">
+
+<!-- ===================== EXPLORE TAB ===================== -->
+<div id="tabExplore">
+
+  <div class="panel">
+    <div class="loc-row">
+      <button class="btn btn-primary" id="locBtn">📍 Use my location</button>
+      <button class="btn btn-ghost" id="customLocBtn">🖊️ Enter location manually</button>
+      <span id="locStatus">Turn location on to see how far each place is from you.</span>
+    </div>
+
+    <div class="custom-loc" id="customLocPanel">
+      <div class="coord-row">
+        <input type="number" step="any" id="latInput" placeholder="Latitude e.g. 24.8075">
+        <input type="number" step="any" id="lngInput" placeholder="Longitude e.g. 93.9428">
+        <button class="btn btn-primary" id="applyCoordBtn">Set</button>
+      </div>
+      <div class="coord-help">
+        Don't know the coordinates? Open
+        <a href="https://www.google.com/maps" target="_blank" rel="noopener">Google Maps</a>,
+        press and hold (or right-click) on any spot to drop a pin — the lat, lng numbers pop up at the bottom.
+        Copy them here and tap Set. This replaces "Use my location" with any place you choose.
+      </div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="🔍 Search any hotel, cafe, hospital or restaurant by name…">
+    </div>
+
+    <div class="spots" id="spotRow"></div>
+    <div class="spot-desc" id="spotDesc"></div>
+    <div class="evening-note" id="eveningNote">🌆 It's getting late in the day — showing hotels first so you can lock in tonight's stay.</div>
+    <div class="cats" id="catRow"></div>
+  </div>
+
+  <div class="stats" id="statsRow"></div>
+
+  <div class="list" id="list"></div>
+
+  <div class="note" id="washroomNote" style="display:none">
+    🚻 Verified public-washroom listings are rare on the map data source, so results here are limited.
+    Tap "Search live on Google Maps" below to find the closest public toilet to your current pin in real time.
+    <div style="margin-top:8px"><a class="btn btn-ghost" id="washroomSearchLink" target="_blank" rel="noopener" style="text-decoration:none; display:inline-block;">🔍 Search live on Google Maps</a></div>
+  </div>
+
+  <div class="note">
+    ℹ️ Free, open guide — no account needed. "Use my location" only asks your browser's built‑in location
+    permission (the same one Google Maps uses). Prefer not to share it? Use "Enter location manually" and paste
+    coordinates from Google Maps instead. Nothing is stored or shared either way.
+  </div>
+</div>
+
+<!-- ===================== TRIP PLANNER TAB ===================== -->
+<div id="tabPlan" style="display:none;">
+  <div class="panel" id="customizePanel">
+    <b style="font-family:'Playfair Display',Georgia,serif;">🛠️ Build your own Manipur trip</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 10px; line-height:1.5;">
+      Choose how many days you actually have and which places you want to see — the route below
+      reorders itself by distance and rebuilds instantly. Leave it as-is to see a ready-made example plan instead.
+    </p>
+    <div class="coord-row" style="margin-top:0;">
+      <input type="number" id="dayCountInput" min="1" max="10" value="5" style="max-width:90px;">
+      <span style="font-size:0.85rem; color:var(--muted); align-self:center;">day(s) trip</span>
+    </div>
+    <div class="spot-check-grid" id="spotCheckGrid"></div>
+    <div class="coord-row">
+      <button class="btn btn-primary" id="generatePlanBtn" style="flex:1;">✨ Generate my plan</button>
+      <button class="btn btn-ghost" id="resetPlanBtn" style="flex:1;">↺ Reset to example plan</button>
+    </div>
+  </div>
+
+  <div id="planList"></div>
+  <div class="note">
+    🌙 Sunset in Manipur is roughly 5:00–5:45 PM most of the year. Plan to be at your last stop of the day
+    by 4:30 PM latest, and lock in a room before dusk — many rural roads (Loktak, Andro, Sekta) are unlit at night.
+  </div>
+</div>
+
+<!-- ===================== BUS ROUTES TAB ===================== -->
+<div id="tabBus" style="display:none;">
+  <div class="panel">
+    <b style="font-family:'Playfair Display',Georgia,serif; font-size:1.05rem;">One timetable for every bus out of Manipur</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 12px; line-height:1.5;">
+      Manipur State Transport and private operators, side by side — departure, arrival, fare, and what to do
+      if you miss one.
+    </p>
+    <div class="coord-row" style="margin-top:0;">
+      <div style="flex:1;">
+        <label style="font-size:0.76rem; color:var(--muted); display:block; margin-bottom:4px;">From</label>
+        <select id="busFrom" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem;">
+          <option value="Imphal">Imphal</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <label style="font-size:0.76rem; color:var(--muted); display:block; margin-bottom:4px;">To</label>
+        <select id="busTo" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem;"></select>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="busSearchBtn" style="width:100%; margin-top:10px;">Search buses</button>
+    <p style="font-size:0.74rem; color:var(--muted); margin:8px 0 0;">
+      ⚠️ These are indicative/sample schedules, not a live feed — always confirm the fare and time at the
+      counter or with the operator before travelling; hill-road weather often causes delays.
+    </p>
+  </div>
+  <div id="busResults"></div>
+</div>
+
+<!-- ===================== FLIGHTS TAB ===================== -->
+<div id="tabFlights" style="display:none;">
+  <div class="panel">
+    <b style="font-family:'Playfair Display',Georgia,serif; font-size:1.05rem;">Flying instead of the bus?</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 0; line-height:1.5;">
+      Book directly with the airline — this just points you to their official site, no booking happens here.
+    </p>
+  </div>
+  <div id="flightsList"></div>
+  <div class="note">
+    Nearest airport: Imphal International Airport (IMF). Both links leave Help Kit Manipur and go to the
+    airline's own website.
+  </div>
+</div>
+
+<!-- ===================== REVIEWS & SAFETY TAB ===================== -->
+<div id="tabReviews" style="display:none;">
+
+  <div class="panel">
+    <b style="font-family:'Playfair Display',Georgia,serif;">⚠️ Reviews &amp; Safety Reports</b>
+    <p style="font-size:0.85rem; color:var(--muted); margin:6px 0 10px; line-height:1.5;">
+      Read or leave a review for any tourist spot, hotel, cafe, restaurant, hospital or police station —
+      including flagging a safety concern (crisis, conflict, an accidental fight, or anything that felt unsafe)
+      so other travellers see it before they go.
+    </p>
+    <select id="reviewLocationSelect"></select>
+  </div>
+
+  <div class="panel" id="reviewSummaryPanel" style="display:none;"></div>
+
+  <!-- ---- Compulsory sign-in gate: must pass before posting a review or feedback ---- -->
+  <div class="panel" id="signInGatePanel">
+    <b style="font-size:0.9rem;">🔐 Sign in to Help Kit Manipur</b>
+    <p style="font-size:0.78rem; color:var(--muted); margin:6px 0 10px; line-height:1.4;">
+      Reading reviews below is always open to everyone. To post a rating or review — just like on the Play
+      Store — sign in first, so your name shows next to your comment instead of it being anonymous.
+    </p>
+    <div class="signin-options">
+      <button class="btn btn-primary" id="signInGoogleBtn" style="width:100%; margin-bottom:8px;">🔵 Continue with Google</button>
+      <button class="btn btn-ghost" id="signInMobileBtn" style="width:100%;">📱 Continue with Mobile Number</button>
+    </div>
+
+    <div id="googleSignInForm" style="display:none; margin-top:10px;">
+      <input type="text" id="googleNameInput" placeholder="Your name" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <input type="email" id="googleEmailInput" placeholder="Google email" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <button class="btn btn-primary" id="googleContinueBtn" style="width:100%;">Continue</button>
+      <div id="googleGateMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+    </div>
+
+    <div id="mobileSignInForm" style="display:none; margin-top:10px;">
+      <input type="text" id="gateNameInput" placeholder="Your name" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <input type="tel" id="gateMobileInput" placeholder="Mobile number (10 digits)" style="width:100%; padding:9px 10px; border-radius:10px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.85rem; margin-bottom:8px;">
+      <button class="btn btn-primary" id="mobileContinueBtn" style="width:100%;">Continue</button>
+      <div id="mobileGateMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+    </div>
+
+    <p style="font-size:0.72rem; color:var(--muted); margin-top:10px;">
+      For your privacy, we don't verify your email or number — it's only used to put your name on your review.
+      It's never stored or shown to anyone.
+    </p>
+  </div>
+
+  <div class="panel" id="signedInBadge" style="display:none;">
+    ✅ Posting as <b id="signedInName"></b> · <button class="a-copy" id="gateSignOutBtn">Switch / sign out</button>
+  </div>
+
+  <div class="panel" id="reviewFormPanel" style="display:none;">
+    <b style="font-size:0.9rem;">✍️ Add your review</b>
+    <div class="star-picker" id="starPicker">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <textarea id="reviewText" rows="3" placeholder="Share your experience — crowd levels, cleanliness, how safe it felt, anything useful for other travellers…"></textarea>
+    <label class="safety-check">
+      <input type="checkbox" id="safetyCheck"> ⚠️ This report describes a safety concern (crisis, conflict, accidental fight, or similar incident)
+    </label>
+    <button class="btn btn-primary" id="submitReviewBtn" style="margin-top:10px; width:100%;">Post review</button>
+    <div id="reviewMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+  </div>
+
+  <div class="list" id="reviewsList"></div>
+
+  <div class="panel" id="feedbackFormPanel" style="display:none;">
+    <b style="font-size:0.9rem;">💬 General feedback about this website</b>
+    <textarea id="siteFeedbackText" rows="3" placeholder="Bugs, ideas, missing places, anything — let us know…" style="margin-top:8px;"></textarea>
+    <button class="btn btn-ghost" id="submitSiteFeedbackBtn" style="margin-top:8px; width:100%;">Send feedback</button>
+    <div id="siteFeedbackMsg" style="font-size:0.78rem; color:var(--muted); margin-top:6px;"></div>
+  </div>
+
+  <div class="note" id="reviewsStorageNote">
+    🔄 Checking whether shared reviews are available…
+  </div>
+</div>
+
+<footer>Made for travellers exploring Manipur • Data via Google Places</footer>
+</div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
